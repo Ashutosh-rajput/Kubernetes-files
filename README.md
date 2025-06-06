@@ -6,26 +6,29 @@ This repository contains Kubernetes configuration files for all my projects. Eac
 
 ```text
 ├── projects/                   # Main projects directory
-│   ├── <project-1>/            # Project 1
-│   │   ├── base/               # Base manifests (common across environments)
-│   │   │   ├── deployment.yaml
-│   │   │   ├── service.yaml
-│   │   │   └── configmap.yaml
-│   │   ├── overlays/           # Environment-specific configurations
-│   │   │   ├── development/
-│   │   │   ├── staging/
-│   │   │   └── production/
-│   │   └── README.md           # Project-specific documentation
-│   │
-│   ├── <project-2>/            # Project 2
-│   └── ...
+│   ├── WealthManager/          # Project 1 
+│   │   ├── expense-deployment.yaml
+│   │   ├── frontend-deployment.yaml
+│   │   ├── mongodb-deployment.yaml
+│   │   ├── nexus-deployment.yaml
+│   │   ├── userinfo-deployment.yaml
+│   │   └── README.md           
+│   └── ...                     
 │
 ├── common/                     # Shared resources
-│   ├── ingress/                # Ingress configurations
-│   ├── cert-manager/           # SSL certificate setups
-│   └── monitoring/             # Monitoring resources
+│   ├── jenkins-deployment.yaml
+│   ├── kafka-deployment.yaml
+│   ├── redis-deployment.yaml
+│   ├── zookeeper-deployment.yaml
+│   └── README.md               
 │
-├── tools/                      # Helper scripts/tools
-├── .github/                    # CI/CD workflows (GitHub Actions)
-├── README.md                   # This file
-└── .kubeconfig-example         # Example kubeconfig (gitignored)
+├── gcp-jenkins/                # Jenkins setup specific to GCP 
+│   ├── jenkins-clusterrole-binding.yaml
+│   ├── jenkins-clusterrole.yaml
+│   ├── jenkins-service-account.yaml
+│   ├── jenkins.yaml
+│   ├── jenkinsfile.txt
+│   └── README.md
+│
+├── README.md                   
+└── tree.log                    
