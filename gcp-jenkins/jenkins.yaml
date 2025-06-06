@@ -1,0 +1,63 @@
+# @author - Ankit Khatri
+# Jenkins Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: jenkins-service
+  namespace: jenkins
+spec:
+  selector:
+    app: jenkins
+  ports:
+  - protocol: TCP
+    port: 8080
+    targetPort: 8080
+  type: LoadBalancer
+
+# Jenkins Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jenkins-deployment
+  namespace: jenkins
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jenkins
+  template:
+    metadata:
+      labels:
+        app: jenkins
+    spec:
+      securityContext:
+        runAsUser: 0 # Root access user
+      serviceAccountName: jenkins
+      containers:
+      - name: jenkins-container
+        image: sanjeev24bhatt/jenkins:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+        - name: jenkins-data
+          mountPath: /tmp/jenkins
+      initContainers:
+      - name: set-permissions
+        image: busybox
+        command: ["sh", "-c", "chmod 777 /tmp/jenkins; chmod 666 /var/run/docker.sock"]  # Set permissions for the Jenkins directory and Docker socket
+        volumeMounts:
+        - name: docker-socket
+          mountPath: /var/run/docker.sock
+        - name: jenkins-data
+          mountPath: /tmp/jenkins
+      volumes:
+      - name: docker-socket
+        hostPath:
+          path: /var/run/docker.sock
+      - name: jenkins-data
+        hostPath:
+          path: /tmp/jenkins  # Specify /tmp/jenkins as the path to the custom directory
