@@ -1,0 +1,41 @@
+# @author - Ankit Khatri
+# Redis Serice [Must be ClusterIP to exposed only for inner container]
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: backend
+spec:
+  selector:
+    app: redis
+  ports:
+  - protocol: TCP
+    port: 6379
+    targetPort: 6379
+  type: LoadBalancer
+
+# Redis Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-deployment
+  namespace: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - name: redis-container
+        # Place the redis docker image here
+        image: redis:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 6379
+        # env-name is used to access env-value in project to call other servies [DNS NAME (must be same as service name)]

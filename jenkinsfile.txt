@@ -1,0 +1,92 @@
+pipeline {
+    agent any
+
+    tools {
+        maven "maven"
+        dockerTool "docker"
+    }
+
+    environment {
+        GKE_CLUSTER_NAME = 'cost-optimized-cluster-1'
+        GKE_ZONE = 'us-central1-c'
+        GKE_PROJECT = 'wealtharc'
+        DOCKER_IMAGE_NAME = 'ashutoshrajput81/userinfo' // Docker Hub image
+        GITHUB_REPO = 'https://github.com/Ashutosh-rajput/wealth-userinfo.git'
+        CREDENTIALS_ID = 'wealtharcgcloudfile' // GCP Service Account Credentials
+        GOOGLE_APPLICATION_CREDENTIALS = '/home/jenkins/wealtharc-370cad6ec97f.json'
+    }
+
+    stages {   // <== Missing this "stages" block in your file
+
+        stage('Checkout Code') {
+            steps {
+                git url: "${GITHUB_REPO}", branch: 'nimbusjwt'
+            }
+        }
+
+        stage('Build Docker Image') {
+            steps {
+                script {
+                    def buildNumber = env.BUILD_NUMBER
+                    def imageTag = "${DOCKER_IMAGE_NAME}:${buildNumber}"
+                    sh "docker build -t ${imageTag} ."
+                }
+            }
+        }
+
+        stage('Push Docker Image to Docker Hub') {
+            steps {
+                script {
+                    def buildNumber = env.BUILD_NUMBER
+                    def imageTag = "${DOCKER_IMAGE_NAME}:${buildNumber}"
+                    withCredentials([usernamePassword(credentialsId: 'ashutoshrajput81', passwordVariable: 'dockerHubPassword', usernameVariable: 'dockerHubUser')]) {
+                        sh 'docker login -u $dockerHubUser -p $dockerHubPassword'
+                        sh "docker push ${imageTag}"
+                    }
+                }
+            }
+        }
+
+        stage('Deploy to GKE') {
+            steps {
+                script {
+                    withCredentials([file(credentialsId: "${CREDENTIALS_ID}", variable: 'GOOGLE_APPLICATION_CREDENTIALS')]) {
+                        sh 'gcloud auth activate-service-account --key-file=$GOOGLE_APPLICATION_CREDENTIALS'
+                        sh 'gcloud container clusters get-credentials ${GKE_CLUSTER_NAME} --zone ${GKE_ZONE} --project ${GKE_PROJECT}'
+                    }
+
+                    def newImageTag = "${DOCKER_IMAGE_NAME}:${env.BUILD_NUMBER}"
+
+                    sh """
+                        kubectl set image deployment/userinfo-deployment \
+                        userinfo-container=${newImageTag} \
+                        --namespace=backend
+                    """
+
+                    def rolloutStatusCmd = "kubectl rollout status deployment/userinfo-deployment --namespace=backend --timeout=60s"
+                    def rollbackCmd = "kubectl rollout undo deployment/userinfo-deployment --namespace=backend"
+
+                    try {
+                        sh rolloutStatusCmd
+                    } catch (Exception e) {
+                        echo "Deployment failed. Initiating rollback..."
+                        sh rollbackCmd
+                        error "Deployment failed and rollback completed."
+                    }
+                }
+            }
+        }
+
+        stage('Clean Up Docker Images Locally') {
+            steps {
+                script {
+                    def previousBuildNumber = (env.BUILD_NUMBER.toInteger() - 1).toString()
+                    def previousImageTag = "${DOCKER_IMAGE_NAME}:${previousBuildNumber}"
+                    sh "docker rmi ${previousImageTag} || true"
+                    sh "docker image prune -f"
+                    sh "docker image prune -a -f || true"
+                }
+            }
+        }
+    }
+}

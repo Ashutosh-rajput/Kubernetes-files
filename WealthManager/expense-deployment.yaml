@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: expense-service
+  namespace: backend
+spec:
+  selector:
+    app: expense
+  ports:
+  - protocol: TCP
+    port: 8181
+    targetPort: 8181
+  type: LoadBalancer
+
+# userinfo Deployment
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: expense-deployment
+  namespace: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: expense
+  template:
+    metadata:
+      labels:
+        app: expense
+    spec:
+      containers:
+      - name: expense-container
+        image: ashutoshrajput81/expense:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8181
+        
+
