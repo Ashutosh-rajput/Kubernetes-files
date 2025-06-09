@@ -133,3 +133,12 @@ cd common/jenkins/
 
 > 🧠 **Tip**: Always refer to the specific `YAML` files and service documentation for precise configuration and environment-specific settings.
 
+
+## 📜 License
+
+MIT License. Feel free to use and modify as per your needs.
+
+---
+
+> 👤 Author: Ashutosh Rajput  
+> 🌐 Project: [WealthArc](#)

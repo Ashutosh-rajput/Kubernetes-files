@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: whatsapp-mcp-sse
+  labels:
+    app: whatsapp-mcp-sse
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate  # Important for SSE applications to maintain connection state
+  selector:
+    matchLabels:
+      app: whatsapp-mcp-sse
+  template:
+    metadata:
+      labels:
+        app: whatsapp-mcp-sse
+    spec:
+      containers:
+      - name: whatsapp-mcp
+        image: ashutoshrajput81/whatsapp-server:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 8080
+        volumeMounts:
+         - name: store-volume
+           mountPath: /whatsapp-mcp-server/store
+      volumes:
+       - name: store-volume
+         persistentVolumeClaim:
+           claimName: whatsapp-store-pvc
+
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: whatsapp-mcp-sse-service
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "86400"  # For Ingress controllers
+    nginx.ingress.kubernetes.io/proxy-buffering: "off"  # Disable buffering for SSE
+spec:
+  selector:
+    app: whatsapp-mcp-sse
+  ports:
+    - protocol: TCP
+      port: 8082
+      targetPort: 8081
+  type: LoadBalancer
